@@ -236,8 +236,6 @@ define([
 		if (this.readonly)
 			this.attrDisable = true;
 	
-		// this.initContext();
-		// this.actRendered();
 	},
 	
 	applyContext : function(context, callback){
