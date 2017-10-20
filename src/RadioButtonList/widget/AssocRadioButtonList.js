@@ -17,15 +17,22 @@
 	===========
 	
 */
+define([
+	"dojo/_base/declare",
+	"mxui/widget/_WidgetBase",
+	"dijit/_TemplatedMixin",
+    'mxui/dom',
+	"dojo/_base/lang",
+	"dojo/dom-attr",
+	"dojo/dom-style",
+	"dojo/dom-class",
+	"dojo/query",
+	"dojo/dom-construct"
+], function (declare, _WidgetBase, _TemplatedMixin, dom, lang, domAttr, domStyle, domClass, query, domConstruct) {
+	"use strict";
 
-dojo.provide("RadioButtonList.widget.AssocRadioButtonList");
-
-mendix.dom.insertCss(mx.moduleUrl('RadioButtonList') + 'widget/ui/RadioButtonList.css');
-
-
-mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
+	return declare("RadioButtonList.widget.AssocRadioButtonList", [ _WidgetBase, _TemplatedMixin ], {
 	//DECLARATION
-	addons       : [dijit._Templated, mendix.addon._Contextable],
 	templateString : '<div class="RadioButtonList"><ul dojoAttachPoint="listNode"></ul><div style="float:none;clear:both"></div></div>',
 	inputargs: { 
 		RadioListObject : '',
@@ -61,12 +68,12 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 		    		validations[0].removeAttribute(self.name);
 		    	} else {
 			    	var reason = validations[0].getReasonByAttribute(self.name);
-					if(dojo.query('.alert', this.domNode).length > 0) {
-						dojo.destroy(dojo.query('.alert', this.domNode)[0]);
+					if(query('.alert', this.domNode).length > 0) {
+						domConstruct.destroy(query('.alert', this.domNode)[0]);
 					}
-			        var div = dojo.create('div', {'class' : 'alert alert-danger'});
+			        var div = dom.create('div', {'class' : 'alert alert-danger'});
 			        mxui.dom.textContent(div, reason);
-			        dojo.place(div, self.domNode, 'last');
+			        domConstruct.place(div, self.domNode, 'last');
 			        validations[0].removeAttribute(self.name);
 		    	}
 		    }
@@ -81,22 +88,20 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 			xpathString = "//" + this.RadioListObject + this.Constraint.replace("'[%CurrentObject%]'", context);
 		else
 			xpathString = "//" + this.RadioListObject + this.Constraint;
-
-		var options = {
-			limit   : 50,
-			depth	: 0,
-			sort    : [[this.sortAttr, this.sortOrder]]
-		};
 		
-		mx.processor.getObjectsByXPath(
-			xpathString,
-			options,
-			dojo.hitch(this, this.initRadioButtonList)
-		);
+		mx.data.get({
+			xpath: xpathString,
+			filter: {
+				sort: [[this.sortAttr, this.sortOrder]],
+				offset: 0,
+				amount: 50
+			},
+			callback: lang.hitch(this, this.initRadioButtonList)
+		});
 	},
 	
 	initRadioButtonList : function(mxObjArr){
-		dojo.empty(this.listNode);
+		domConstruct.empty(this.listNode);
 		var mxObj;
 		
 		var currentSelectedValue;
@@ -110,12 +115,12 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 			
 			var radioid = this.RadioListObject+'_'+this.id+'_'+i;
 								
-			var labelNode = mendix.dom.label();
-			dojo.attr(labelNode,'for', radioid);
-			dojo.attr(labelNode, 'disabled', this.attrDisable);
+			var labelNode = dom.create("label");
+			domAttr.set(labelNode,'for', radioid);
+			domAttr.set(labelNode, 'disabled', this.attrDisable);
 			
-			var guid = mxObj.getGUID();
-			var rbNode = mendix.dom.input({
+			var guid = mxObj.getGuid();
+			var rbNode = dom.create("input", {
 				'type' : 'radio',
 				'value' : guid ,
 			//	'name' : "radio"+this.mendixobject.getGUID()+'_'+this.id,
@@ -125,29 +130,29 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 			//MWE: name is set here, because otherwise it will result in a
 			//"INVALID_CHARACTER_ERR (5)" exception,
 			//which is a result of the fact that document.createElement("<tagname baldibla='basdf'>") is not allowed anymore
-			dojo.attr(rbNode, 'name', "radio"+this.mendixobject.getGUID()+'_'+this.id);
+			domAttr.set(rbNode, 'name', "radio"+this.mendixobject.getGuid()+'_'+this.id);
 
 			this.keyNodeArray[guid] = rbNode;
 			
-			dojo.attr(rbNode, 'disabled', this.attrDisable);
+			domAttr.set(rbNode, 'disabled', this.attrDisable);
 			
-			if (currentSelectedValue == mxObj.getGUID()) {
-				dojo.attr(rbNode,'defaultChecked', true);
+			if (currentSelectedValue == mxObj.getGuid()) {
+				domAttr.set(rbNode,'defaultChecked', true);
 			}
 			
-			var textDiv = mendix.dom.span(mxObj.getAttribute(this.RadioListItemAttribute));
-			dojo.style(textDiv, { cursor : 'default' });
+			var textDiv = dom.create("span", null, mxObj.get(this.RadioListItemAttribute));
+			domStyle.set(textDiv, { cursor : 'default' });
 			
 			labelNode.appendChild(rbNode);
 			labelNode.appendChild(textDiv);
 			
-			this.connect(rbNode, "onclick", dojo.hitch(this, this.onclickRadio, mxObj.getGUID(), rbNode));
-			this.connect(textDiv, "onclick", dojo.hitch(this, this.onclickRadio, mxObj.getGUID(), rbNode));
+			this.connect(rbNode, "onclick", lang.hitch(this, this.onclickRadio, mxObj.getGuid(), rbNode));
+			this.connect(textDiv, "onclick", lang.hitch(this, this.onclickRadio, mxObj.getGuid(), rbNode));
 			
-			var listItemNode = mendix.dom.li(labelNode);
+			var listItemNode = dom.create("li", null, labelNode);
 			
 			if(this.direction == 'horizontal') {
-				dojo.addClass(listItemNode, 'horizontal');
+				domClass.add(listItemNode, 'horizontal');
 			}
 			
 			this.listNode.appendChild(listItemNode);
@@ -161,7 +166,7 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 			return;
 			
 		this._setValueAttr(radioKey);
-			dojo.attr(rbNode,'checked', true);
+		domAttr.set(rbNode,'checked', true);
 			
 		this.onChange();
 		this.triggerMicroflow();
@@ -198,13 +203,15 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 		
 		if (this.onchangeAction)
 		{
-			mx.processor.xasAction({
+			mx.data.action({
+				params: {
+					actionname  : this.onchangeAction,
+					applyto     : 'selection',
+					guids       : [this.mendixobject.getGuid()]
+				},
 				error       : function() {
 					logger.error("RadioButtonList.widget.AssocRadioButtonList.triggerMicroFlow: XAS error executing microflow");
-				},
-				actionname  : this.onchangeAction,
-				applyto     : 'selection',
-				guids       : [this.mendixobject.getGUID()]
+				}
 			});
 		}
 	},
@@ -229,15 +236,18 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 		if (this.readonly)
 			this.attrDisable = true;
 	
-		this.initContext();
-		this.actRendered();
+		// this.initContext();
+		// this.actRendered();
 	},
 	
 	applyContext : function(context, callback){
 		logger.debug(this.id + ".applyContext");
 		
 		if (context)
-			mx.processor.getObject(context.getActiveGUID(), dojo.hitch(this, this.setDataobject));
+			mx.data.get({
+				guid: context.getTrackId(),
+				callback: lang.hitch(this, this.setDataobject)
+			});
 		else
 			logger.warn(this.id + ".applyContext received empty context");
 			
@@ -247,4 +257,7 @@ mendix.widget.declare('RadioButtonList.widget.AssocRadioButtonList', {
 	uninitialize : function(){
 		logger.debug(this.id + ".uninitialize");
 	}
-});
+		});
+	});
+
+require([ "RadioButtonList/widget/AssocRadioButtonList" ]);
