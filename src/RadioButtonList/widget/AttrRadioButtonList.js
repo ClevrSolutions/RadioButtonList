@@ -19,13 +19,21 @@
 
 	
 */
-dojo.provide("RadioButtonList.widget.AttrRadioButtonList");
+define([
+	"dojo/_base/declare",
+	"mxui/widget/_WidgetBase",
+	"dijit/_TemplatedMixin",
+	"dojo/_base/lang",
+    'mxui/dom',
+	"dojo/dom-attr",
+	"dojo/query",
+	"dojo/dom-construct",
+	"dojo/dom-style"
+], function (declare, _WidgetBase, _TemplatedMixin, lang, dom, domAttr, query, domConstruct, domStyle) {
+	"use strict";
 
-mendix.dom.insertCss(mx.moduleUrl('RadioButtonList') + 'widget/ui/RadioButtonList.css');
-
-mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
+	return declare("RadioButtonList.widget.AttrRadioButtonList", [ _WidgetBase, _TemplatedMixin ], {
 	//DECLARATION
-	addons       : [dijit._Templated, mendix.addon._Contextable],
 	templateString : '<div class="RadioButtonList"><div style="float:none;clear:both"></div></div>',
 	inputargs: {
 		name : '',
@@ -59,9 +67,9 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 				if (this.name != '') {
 					var enumerationObj;
 					//get enumeration for current attribute
-					if(mxObject.getAttributeClass(this.name) == 'Enum')
+					if(mxObject.getAttributeType(this.name) == 'Enum')
 						enumerationObj = mxObject.getEnumKVPairs(this.name);
-					else if(mxObject.getAttributeClass(this.name) == 'Boolean')
+					else if(mxObject.getAttributeType(this.name) == 'Boolean')
 					{
 						enumerationObj = {};
 						enumerationObj['true'] = this.captiontrue;
@@ -86,12 +94,12 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 			    		validations[0].removeAttribute(self.name);
 			    	} else {
 				    	var reason = validations[0].getReasonByAttribute(self.name);
-						if(dojo.query('.alert', self.domNode).length > 0) {
-							dojo.destroy(dojo.query('.alert', self.domNode)[0]);
+						if(query('.alert', self.domNode).length > 0) {
+							domConstruct.destroy(query('.alert', self.domNode)[0]);
 						}
-				        var div = dojo.create('div', {'class' : 'alert alert-danger'});
+				        var div = dom.create('div', {'class' : 'alert alert-danger'});
 				        mxui.dom.textContent(div, reason);
-				        dojo.place(div, self.domNode, 'last');
+				        domConstruct.place(div, self.domNode, 'last');
 				        validations[0].removeAttribute(self.name);
 			    	}
 			    }
@@ -104,12 +112,12 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 	
 	initRadioButtonList : function(enumObj){
 		var i = 0;
-		dojo.empty(this.domNode);
-		var attrName = "" + this.mendixobject.getAttribute(this.name);
+		domConstruct.empty(this.domNode);
+		var attrName = "" + this.mendixobject.get(this.name);
 		for (var key in enumObj) {
 			var radioid = this.name+'_'+this.id+'_'+i;
-			var radiodiv = this.direction == 'horizontal' ? dojo.create('div', {'class' : 'radio-inline'}) : dojo.create('div', {'class' : 'radio'});
-			var rbNode = mendix.dom.input({
+			var radiodiv = this.direction == 'horizontal' ? dom.create('div', {'class' : 'radio-inline'}) : dom.create('div', {'class' : 'radio'});
+			var rbNode = dom.create("input", {
 				'type' : 'radio',
 				'value' : key,
 				//'name' : "radio"+this.mendixobject.getGUID()+'_'+this.id,
@@ -118,28 +126,28 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 			//MWE: name is set here, because otherwise it will result in a
 			//"INVALID_CHARACTER_ERR (5)" exception,
 			//which is a result of the fact that document.createElement("<tagname baldibla='basdf'>") is not allowed anymore
-			dojo.attr(rbNode, 'name',  "radio"+this.mendixobject.getGUID()+'_'+this.id);
+			domAttr.set(rbNode, 'name',  "radio"+this.mendixobject.getGuid()+'_'+this.id);
 			
 			
 			this.keyNodeArray[key] = rbNode;
 			
-			var labelNode = mendix.dom.label();
-			dojo.attr(labelNode,'for', radioid);
-			dojo.attr(labelNode, 'disabled', this.attrDisable);
+			var labelNode = dom.create("label");
+			domAttr.set(labelNode,'for', radioid);
+			domAttr.set(labelNode, 'disabled', this.attrDisable);
 			
-			dojo.attr(rbNode, 'disabled', this.attrDisable);
+			domAttr.set(rbNode, 'disabled', this.attrDisable);
 
 			if (attrName == key) {
-				dojo.attr(rbNode,'defaultChecked', true);
+				domAttr.set(rbNode,'defaultChecked', true);
 				this.selectedValue = key;
 			}
 
-			var textDiv = mendix.dom.span(enumObj[key]);
-			dojo.style(textDiv, { cursor : 'default' });
-			this.connect(rbNode, "onclick", dojo.hitch(this, this.onChangeRadio, rbNode, key));
-			this.connect(textDiv, "onclick", dojo.hitch(this, this.onChangeRadio, rbNode, key));
+			var textDiv = dom.create("span", null, enumObj[key]);
+			domStyle.set(textDiv, { cursor : 'default' });
+			this.connect(rbNode, "onclick", lang.hitch(this, this.onChangeRadio, rbNode, key));
+			this.connect(textDiv, "onclick", lang.hitch(this, this.onChangeRadio, rbNode, key));
 			
-			var listItemNode = mendix.dom.li(textDiv);
+			var listItemNode = dom.create("li", null, textDiv);
 			
 			labelNode.appendChild(rbNode);
 			labelNode.appendChild(textDiv);
@@ -156,7 +164,7 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 		if (this.attrDisable)
 			return;
 
-		dojo.attr(rbNode,'checked', true);
+			domAttr.set(rbNode,'checked', true);
 		this.selectedValue = enumkey;
 		this._setValueAttr(enumkey);
 		this.onChange();
@@ -168,13 +176,15 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 		logger.debug(this.id + ".triggerMicroflow");
 		
 		if (this.onchangeAction) {
-			mx.processor.xasAction({
+			mx.data.action({
+				params: {
+					applyto     : 'selection',
+					actionname  : this.onchangeAction,
+					guids       : [this.mendixobject.getGuid()]
+				},
 				error       : function() {
 					logger.error("RadioButtonList.widget.AssocRadioButtonList.triggerMicroFlow: XAS error executing microflow")
-				},
-				actionname  : this.onchangeAction,
-				applyto     : 'selection',
-				guids       : [this.mendixobject.getGUID()]
+				}
 			});
 		}
 	},
@@ -225,15 +235,18 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 		if (this.readonly)
 			this.attrDisable = true;
 	
-		this.initContext();
-		this.actRendered();
+		// this.initContext();
+		// this.actRendered();
 	},
  
 	applyContext : function(context, callback){
 		logger.debug(this.id + ".applyContext");
 		
 		if (context) {
-			mx.processor.getObject(context.getActiveGUID(), dojo.hitch(this, this.setDataobject));
+			mx.data.get({
+				guid: context.getTrackId(),
+				callback: lang.hitch(this, this.setDataobject)
+			});
 		} else
 			logger.warn(this.id + ".applyContext received empty context");
 		callback && callback();
@@ -242,4 +255,7 @@ mendix.widget.declare('RadioButtonList.widget.AttrRadioButtonList', {
 	uninitialize : function(){
 		logger.debug(this.id + ".uninitialize");
 	}
-});
+		});
+	});
+
+require([ "RadioButtonList/widget/AttrRadioButtonList" ]);
